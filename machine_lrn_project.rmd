@@ -1,0 +1,91 @@
+---
+title: "Practical Machine Learning Project"
+output: html_document
+---
+
+### Executive Summary
+This report analyses the data of quantified self movement taken by using devices such as Jawbone Up, Nike FuelBand, and Fitbit.In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways.This human activity recognition research has traditionally focused on discriminating between different activities, i.e. to predict "which" activity was performed at a specific point in time (like with the Daily Living Activities dataset above). The approach we propose for the Weight Lifting Exercises dataset is to investigate "how (well)" an activity was performed by the wearer. The "how (well)" investigation has only received little attention so far, even though it potentially provides useful information for a large variety of applications,such as sports training.
+
+Six young health participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions: exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E).Class A corresponds to the specified execution of the exercise, while the other 4 classes correspond to common mistakes. Participants were supervised by an experienced weight lifter to make sure the execution complied to the manner they were supposed to simulate. The exercises were performed by six male participants aged between 20-28 years, with little weight lifting experience. We made sure that all participants could easily simulate the mistakes in a safe and controlled manner by using a relatively light dumbbell (1.25kg).
+
+### Loading training and testing data
+```{r echo=TRUE, warning=FALSE}
+
+dat_train = read.csv("D:\\Johnhopkins\\course8_Machine Learning\\week4\\pml-training.csv",na.strings = c("NA","0.00","0.0000","#DIV/0!",""))
+dat_test = read.csv("D:\\Johnhopkins\\course8_Machine Learning\\week4\\pml-testing.csv",na.strings = c("NA","0.00","0.0000","#DIV/0!",""))
+```
+
+### Data exploration of training data
+```{r echo=TRUE, warning=FALSE}
+dim(dat_train)
+summary(dat_train)
+```
+### Cleaning training data
+Removed first seven fields.They will not be used in model. Also removed fields which do not have data. 
+```{r echo=TRUE, warning=FALSE}
+subdt <-dat_train[,-c(1:7)]
+cln_train<-subdt[ , colSums(is.na(subdt)) == 0]
+```
+### Summary of training dataset after removing variables having NA and zero values
+```{r echo=TRUE, warning=FALSE}
+summary(cln_train)
+```
+### Data exploration of testing data
+```{r echo=TRUE, warning=FALSE}
+dim(dat_test)
+```
+### Cleaning of testing data
+```{r echo=TRUE, warning=FALSE}
+subtest <-dat_test[,-c(1:7)]
+cln_test<-subtest[ , colSums(is.na(subtest)) == 0]
+## summary of testing data after removing variables having NA and zero values
+summary(cln_test)
+```
+
+The training data for this project has 19622 observations on 160 variables and the test data has 20 observations on 160 variables.Some variables have missing values,indeterminant form and zero values which are removed for cleaning data.some variables are character variables which are also removed.Now I am going to build three models random forest, bagging and linear discriminant analysis on this data.
+
+####Random Forests:
+Random forest are a very Nice technique to fit a more Accurate Model by averaging Lots of Decision Trees and reducing the Variance and avoiding Overfitting problem in Trees. Decision Trees themselves are poor performance wise, but when used with Ensembling Techniques like Bagging, Random Forests etc, their predictive performance is improved a lot.
+
+####Bagging:
+Bagging is a powerful method to improve the performance of simple models and reduce overfitting of more complex models. The principle is , instead of fitting the model on one sample of the population, several models are fitted on different samples (with replacement) of the population. Then, these models are aggregated by using their average, weighted average or a voting system (mainly for classification).
+
+#### Boosting:
+Boosting with trees (gbm)  which along with random forest, is one of the most accurate out of the box classifiers. In boosting we take a large number of possibly weak predictors, and we're going to take those possibly weak predictors, and weight them in a way, that takes advantage of their strengths, and add them up.
+
+#### Linear Discriminant Analysis:
+Linear Discriminant Analysis (LDA) is a well-established machine learning technique for predicting categories. Its main advantages, compared to other classification algorithms such as neural networks and random forests, are that the model is interpretable and that prediction is easy.
+
+
+### Splitting traing data and building models
+```{r echo=TRUE, warning=FALSE}
+library(caret)
+library(gbm)
+set.seed(2)
+inTrain = createDataPartition(cln_train$classe, p = 3/4)[[1]]
+training=cln_train[inTrain,]
+testing=cln_train[-inTrain,]
+if  (!exists("mod_rf")){
+mod_rf <- train(classe ~ ., data = training, method = "rf")
+}
+if  (!exists("mod_gbm")){
+mod_gbm <- train(classe ~ ., data = training, method = "gbm")
+}
+if  (!exists("mod_lda")){
+mod_lda <- train(classe ~ ., data = training, method = "lda")
+}
+pred_rf <- predict(mod_rf, testing)
+pred_gbm <- predict(mod_gbm, testing)
+pred_lda <- predict(mod_lda, testing)
+confusionMatrix(pred_rf, testing$classe)$overall[1]
+confusionMatrix(pred_gbm, testing$classe)$overall[1]
+confusionMatrix(pred_lda, testing$classe)$overall[1]
+```
+
+The confusion matrix shows that Random forest model is 99% accurate.Boosting is 96% accurate and Linear Discriminant analysis is 70% accurate. 
+
+### Conclusion:
+
+This result validate that Random forest prediction model is giving large accuracy, that is 0.9934747, among all models, so here we are building random forest prediction model for this project. 
+
+
